@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Video</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="logo">Video System</div>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="container">
+    <div class="box">
+      <h2>Live Camera</h2>
+      <video id="liveVideo" autoplay></video>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+  <script>
+    const liveVideo = document.getElementById("liveVideo");
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        liveVideo.srcObject = stream;
+      })
+      .catch(() => {
+        alert("Camera access denied");
+      });
+  </script>
+
+</body>
+</html>
