@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <h3>Higher Authority Dashboard</h3>
+    <a href="/">Logout</a>
+</div>
+
+<div class="dashboard-container">
+
+    <h2>All Vehicle Details</h2>
+    <table>
+        <tr>
+            <th>Vehicle No</th>
+            <th>Color</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Owner</th>
+            <th>Contact</th>
+        </tr>
+
+        {% for v in vehicles %}
+        <tr>
+            <td>{{ v.vehicle_reg_no }}</td>
+            <td>{{ v.vehicle_colour }}</td>
+            <td>{{ v.vehicle_type }}</td>
+            <td>{{ v.vehicle_status }}</td>
+            <td>{{ v.owner_name }}</td>
+            <td>{{ v.owner_contact_no }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Detected Vehicles</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Vehicle No</th>
+            <th>Color</th>
+            <th>Type</th>
+            <th>Time</th>
+            <th>Lane</th>
+            <th>Toll</th>
+        </tr>
+
+        {% for d in detected %}
+        <tr>
+            <td>{{ d.detection_id }}</td>
+            <td>{{ d.vehicle_reg_no }}</td>
+            <td>{{ d.detected_colour }}</td>
+            <td>{{ d.detected_type }}</td>
+            <td>{{ d.detection_time }}</td>
+            <td>{{ d.lane_no }}</td>
+            <td>{{ d.toll_id }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>Alerts</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Vehicle</th>
+            <th>Reason</th>
+            <th>Time</th>
+            <th>Location</th>
+        </tr>
+
+        {% for a in alerts %}
+        <tr>
+            <td>{{ a.alert_id }}</td>
+            <td>{{ a.vehicle_reg_no }}</td>
+            <td class="alert">{{ a.alert_reason }}</td>
+            <td>{{ a.alert_time }}</td>
+            <td>{{ a.toll_location }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+</body>
+</html>

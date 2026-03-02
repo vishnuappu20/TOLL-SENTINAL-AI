@@ -1,0 +1,190 @@
+import cv2
+import re
+import torch
+import easyocr
+import mysql.connector
+import smtplib
+from email.mime.text import MIMEText
+from ultralytics import YOLO
+from datetime import datetime
+
+# ================= SETTINGS =================
+COOLDOWN_SECONDS = 30
+last_detected = {}
+
+EMAIL_ADDRESS = "pdspersonal7@gmail.com"
+EMAIL_PASSWORD = "wyqr upjt ydoe wkrw"
+ALERT_RECEIVER = "parth123dlps@gmail.com"
+
+# ================= LOAD MODELS =================
+vehicle_model = YOLO("yolov8n.pt")
+plate_model = YOLO("plate_model.pt")
+reader = easyocr.Reader(['en'], gpu=torch.cuda.is_available())
+
+# ================= DATABASE =================
+def get_db():
+    return mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="root",
+        database="toll_sentinel_ai",
+        autocommit=True
+    )
+
+# ================= EMAIL FUNCTION =================
+def send_email(subject, message):
+    try:
+        msg = MIMEText(message)
+        msg["Subject"] = subject
+        msg["From"] = EMAIL_ADDRESS
+        msg["To"] = ALERT_RECEIVER
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
+            server.send_message(msg)
+
+        print("Email alert sent")
+
+    except Exception as e:
+        print("Email failed:", e)
+
+# ================= HELPERS =================
+def clean_plate(text):
+    return re.sub('[^A-Z0-9]', '', text.upper())
+
+def valid_plate(text):
+    pattern = r'^[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}$'
+    return re.match(pattern, text)
+
+def detect_color(image):
+    import numpy as np
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    avg = np.mean(hsv, axis=(0,1))
+    h,s,v = avg
+
+    if v > 200 and s < 40:
+        return "White"
+    if v < 60:
+        return "Black"
+    if 90 < h < 130:
+        return "Blue"
+    return "Grey"
+
+# ================= MAIN PROCESS =================
+def process_frame(frame, lane_no=1, toll_id=1, location="Ernakulam"):
+
+    db = get_db()
+    cursor = db.cursor()
+
+    results = vehicle_model(frame, conf=0.5, verbose=False)
+
+    for r in results:
+        for box in r.boxes:
+
+            cls_id = int(box.cls[0])
+            label = vehicle_model.names[cls_id]
+
+            if label not in ["car", "truck", "bus", "motorcycle"]:
+                continue
+
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            vehicle_crop = frame[y1:y2, x1:x2]
+
+            detected_color = detect_color(vehicle_crop)
+
+            # Detect plate inside vehicle
+            plate_results = plate_model(vehicle_crop, conf=0.5, verbose=False)
+
+            for pr in plate_results:
+                for pbox in pr.boxes:
+
+                    px1, py1, px2, py2 = map(int, pbox.xyxy[0])
+                    plate_crop = vehicle_crop[py1:py2, px1:px2]
+
+                    ocr = reader.readtext(plate_crop)
+                    if not ocr:
+                        continue
+
+                    plate = clean_plate(ocr[0][1])
+
+                    if not valid_plate(plate):
+                        continue
+
+                    now = datetime.now()
+
+                    # ================= COOLDOWN CHECK =================
+                    if plate in last_detected:
+                        diff = (now - last_detected[plate]).seconds
+                        if diff < COOLDOWN_SECONDS:
+                            continue
+
+                    last_detected[plate] = now
+
+                    minute_stamp = now.strftime("%Y-%m-%d %H:%M")
+
+                    # ================= INSERT DETECTION =================
+                    try:
+                        cursor.execute("""
+                            INSERT IGNORE INTO detected_vehicle
+                            (vehicle_reg_no, detected_colour, detected_type,
+                             lane_no, toll_id, detection_minute)
+                            VALUES (%s,%s,%s,%s,%s,%s)
+                        """, (plate, detected_color, label,
+                              lane_no, toll_id, minute_stamp))
+
+                        print("Detected:", plate)
+
+                    except Exception as e:
+                        print("Insert detection error:", e)
+
+                    # ================= CHECK REGISTERED DATA =================
+                    cursor.execute("""
+                        SELECT vehicle_colour, vehicle_type, vehicle_status,
+                               owner_name, owner_contact_no
+                        FROM registered_vehicle_data
+                        WHERE vehicle_reg_no=%s
+                    """, (plate,))
+                    data = cursor.fetchone()
+
+                    alert_reason = None
+                    owner = "Unknown"
+                    contact = "Unknown"
+
+                    if data:
+                        reg_color, reg_type, status, owner, contact = data
+
+                        if status.lower() == "stolen":
+                            alert_reason = "Stolen Vehicle"
+
+                        elif (reg_color.lower() != detected_color.lower() or
+                              reg_type.lower() != label.lower()):
+                            alert_reason = "Number Plate Mismatch"
+
+                    else:
+                        alert_reason = "Fake Number Plate"
+
+                    # ================= INSERT ALERT =================
+                    if alert_reason:
+                        try:
+                            cursor.execute("""
+                                INSERT INTO alert_table
+                                (vehicle_reg_no, alert_reason, toll_id,
+                                 toll_location, owner_name, owner_contact_no)
+                                VALUES (%s,%s,%s,%s,%s,%s)
+                            """, (plate, alert_reason, toll_id,
+                                  location, owner, contact))
+
+                            send_email(
+                                "🚨 Toll Sentinel Alert",
+                                f"Vehicle: {plate}\n"
+                                f"Reason: {alert_reason}\n"
+                                f"Location: {location}"
+                            )
+
+                            print("Alert Generated:", alert_reason)
+
+                        except Exception as e:
+                            print("Alert insert error:", e)
+
+    cursor.close()
+    db.close()
