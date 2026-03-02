@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Live Monitoring</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <h3>Video System</h3>
+    <a href="/operator">Back</a>
+</div>
+
+<div class="center-container">
+    <div class="upload-card">
+        <h2>Live Camera Monitoring</h2>
+
+        <a href="/live" class="btn-blue">Start Camera</a>
+        <a href="/operator" class="btn-red">Stop Camera</a>
+    </div>
+</div>
+
+</body>
+</html>
