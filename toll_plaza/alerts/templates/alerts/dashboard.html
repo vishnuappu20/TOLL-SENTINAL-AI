@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Toll Operator Dashboard</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #e9eef5;
+            margin: 0;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar {
+            background: #1f2a3a;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            background: red;
+            padding: 6px 12px;
+            border-radius: 4px;
+        }
+
+        .container {
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        /* ===== CARDS ===== */
+        .card-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 40px;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            width: 220px;
+            height: 150px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            padding-top: 40px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            margin: 10px 0;
+        }
+
+        /* ===== TABLE ===== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        th {
+            background: #007bff;
+            color: white;
+        }
+
+        .alert-row {
+            background-color: #ffe6e6;
+        }
+
+        .thumb {
+            width: 80px;
+            border-radius: 4px;
+        }
+
+        .thumb:hover {
+            transform: scale(1.4);
+            transition: 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+
+<div class="navbar">
+    <div>
+        <strong>Video System</strong>
+    </div>
+    <div>
+        Logged in as: <b>{{ request.user.username }}</b>
+        <a href="{% url 'logout' %}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <h1>Dashboard</h1>
+
+    {% if profile.role == "OPERATOR" %}
+    <p style="text-align:center;">
+        <b>Toll:</b> {{ profile.toll_name }} |
+        <b>Lane:</b> {{ profile.lane_number }}
+    </p>
+    {% endif %}
+
+    <!-- ================= UPLOAD FORM (Hidden Input) ================= -->
+
+    <form id="uploadForm" method="POST" enctype="multipart/form-data" action="{% url 'upload_video' %}">
+        {% csrf_token %}
+        <input type="file" id="videoInput" name="video" style="display:none" required>
+    </form>
+
+    <!-- ================= TOP CARDS ================= -->
+
+    <div class="card-container">
+
+        <!-- Upload Card -->
+        <div class="card" onclick="triggerUpload()">
+            <h3>Upload Video</h3>
+            <p>Click to select video</p>
+        </div>
+
+        <!-- Live Card -->
+        <div class="card">
+            <h3>Live Video</h3>
+            <p>(Coming Soon)</p>
+        </div>
+
+    </div>
+
+    <!-- ================= ALERT TABLE ================= -->
+
+    <h2>Alert Vehicles</h2>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Image</th>
+            <th>Plate</th>
+            <th>Reason</th>
+            <th>Toll</th>
+            <th>Lane</th>
+            <th>Owner</th>
+            <th>Contact</th>
+            <th>Time</th>
+        </tr>
+
+        {% for a in alerts %}
+        <tr class="alert-row">
+            <td>{{ a.id }}</td>
+
+            <td>
+                {% if a.image %}
+                    <a href="{{ a.image.url }}" target="_blank">
+                        <img src="{{ a.image.url }}" class="thumb">
+                    </a>
+                {% else %}
+                    No Image
+                {% endif %}
+            </td>
+
+            <td>{{ a.plate_number }}</td>
+            <td>{{ a.alert_reason }}</td>
+            <td>{{ a.toll_name }}</td>
+            <td>{{ a.lane_number }}</td>
+            <td>{{ a.owner_name }}</td>
+            <td>{{ a.owner_contact }}</td>
+            <td>{{ a.alert_time }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9">No alerts</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</div>
+
+<!-- ================= SCRIPT ================= -->
+
+<script>
+function triggerUpload() {
+    document.getElementById("videoInput").click();
+}
+
+document.getElementById("videoInput").addEventListener("change", function() {
+    document.getElementById("uploadForm").submit();
+});
+</script>
+
+</body>
+</html>
