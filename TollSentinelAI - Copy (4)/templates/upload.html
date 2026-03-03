@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Video</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <h3>Upload Video for Processing</h3>
+    <a href="/operator">Back</a>
+</div>
+
+<div class="upload-container">
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="video" required>
+        <button type="submit">Upload & Process</button>
+    </form>
+
+    {% if message %}
+        <p class="success">{{ message }}</p>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
