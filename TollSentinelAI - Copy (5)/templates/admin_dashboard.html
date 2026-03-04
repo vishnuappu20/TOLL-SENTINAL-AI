@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <h3>Higher Authority Dashboard</h3>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</div>
+
+<div class="dashboard-container">
+
+    <!-- ================= REGISTERED VEHICLES ================= -->
+    <h2>Registered Vehicles</h2>
+
+<table>
+    <tr>
+        <th>Vehicle No</th>
+        <th>Color</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Owner</th>
+        <th>Contact</th>
+        <th>Action</th>
+    </tr>
+
+    {% for v in vehicles %}
+    <tr>
+        <td>{{ v.vehicle_reg_no }}</td>
+        <td>{{ v.vehicle_colour }}</td>
+        <td>{{ v.vehicle_type }}</td>
+        <td>{{ v.vehicle_status }}</td>
+        <td>{{ v.owner_name }}</td>
+        <td>{{ v.owner_contact_no }}</td>
+        <td>
+            <a href="/delete_vehicle/{{ v.vehicle_reg_no }}" 
+               onclick="return confirm('Are you sure?')">
+               <button style="background:red;">Delete</button>
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<h2>Add Registered Vehicle</h2>
+
+<form method="POST" action="/add_vehicle">
+    <input type="text" name="vehicle_reg_no" placeholder="Vehicle No (KL07AB1234)" required>
+    <input type="text" name="vehicle_colour" placeholder="Colour" required>
+    <input type="text" name="vehicle_type" placeholder="Type (car/truck/bus)" required>
+    <select name="vehicle_status">
+        <option value="Active">Active</option>
+        <option value="Stolen">Stolen</option>
+    </select>
+    <input type="text" name="owner_name" placeholder="Owner Name" required>
+    <input type="text" name="owner_contact_no" placeholder="Contact No" required>
+    <button type="submit">Add Vehicle</button>
+</form>
+
+
+    <!-- ================= DETECTED VEHICLES ================= -->
+    <h2>Detected Vehicles</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Vehicle No</th>
+            <th>Color</th>
+            <th>Type</th>
+            <th>Time</th>
+            <th>Lane</th>
+            <th>Toll</th>
+        </tr>
+
+        {% for d in detected %}
+        <tr>
+            <td>{{ d.id }}</td>
+            <td>{{ d.vehicle_reg_no }}</td>
+            <td>{{ d.detected_colour }}</td>
+            <td>{{ d.detected_type }}</td>
+            <td>{{ d.detection_minute }}</td>
+            <td>{{ d.lane_no }}</td>
+            <td>{{ d.toll_id }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
+    <!-- ================= ALERTS ================= -->
+    <h2>Alerts</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Vehicle</th>
+            <th>Reason</th>
+            <th>Location</th>
+        </tr>
+
+        {% for a in alerts %}
+        <tr>
+            <td>{{ a.id }}</td>
+            <td>{{ a.vehicle_reg_no }}</td>
+            <td class="alert">{{ a.alert_reason }}</td>
+            <td>{{ a.toll_location }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
+    <!-- ================= ADD OPERATOR ================= -->
+    <h2>Add New Operator</h2>
+    <form method="POST" action="/add_user">
+        <input type="text" name="username" placeholder="Operator Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <select name="role">
+            <option value="operator">Operator</option>
+            <option value="admin">Admin</option>
+        </select>
+        <button type="submit">Add User</button>
+    </form>
+
+</div>
+
+</body>
+</html>

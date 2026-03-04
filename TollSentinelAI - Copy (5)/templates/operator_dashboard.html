@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Operator Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <h3>Operator Control Panel</h3>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</div>
+
+<div class="dashboard-container">
+
+    <h2>Welcome, Operator</h2>
+
+    <div class="card-container">
+
+        <a href="{{ url_for('upload') }}" class="card">
+            <h3>Upload Video</h3>
+            <p>Process recorded CCTV footage</p>
+        </a>
+
+        <a href="{{ url_for('view_alerts') }}" class="card">
+            <h3>View Alerts</h3>
+            <p>Check suspicious vehicles</p>
+        </a>
+
+        <a href="{{ url_for('live_camera') }}" class="card">
+            <h3>Live Camera</h3>
+            <p>Start real-time detection</p>
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+</html>
